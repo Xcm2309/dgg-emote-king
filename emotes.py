@@ -2,6 +2,13 @@ import requests
 
 baseURL = 'https://cdn.destiny.gg/2.31.4/emotes/'
 
+emoteFileNameTest = {
+    'Abathur': '5c2bbb92c428e.png',
+    'AMAZIN': '5d2de6f9879d5.png',
+    'AngelThump': '5c2bbb9fa8ab2.png',
+    'ApeHands': '5fad9768d877a.png',
+}
+
 emoteFileName = {
     'Abathur': '5c2bbb92c428e.png',
     'AMAZIN': '5d2de6f9879d5.png',
