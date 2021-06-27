@@ -10,7 +10,9 @@ import emotes
 TIMESTAMP_LEN = len('[2309-04-27 04:20:69 UTC]') + 1
 
 def isValidDGGLine(line):
-    """Checks a DGG chatline for """
+    """
+    Checks if the given string, line, is a valid DGG chat message.
+    """
     validRE = '^\[[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC\] \w+:'
     if re.match(validRE, line):
         return True
@@ -18,12 +20,17 @@ def isValidDGGLine(line):
         return False
 
 def isValidDGGLog(log):
+    """
+    Checks if the given string, log, is a valid DGG log.
+    """
     lines = log.splitlines()
     # If the last line isn't valid something probably went wrong
     return isValidDGGLine(lines[len(lines) - 1])
 
 def getLogURL(year, month, day):
-    """Return the URL of a DGG chatlog for a given year, month, and day"""
+    """
+    Return the URL of a DGG chatlog for a given year, month, and day.
+    """
     URL = 'https://overrustlelogs.net/Destinygg%20chatlog/'
     URL += calendar.month_name[month]
     URL += '%20'
@@ -37,22 +44,10 @@ def getLogURL(year, month, day):
     URL += '.txt'
     return URL
 
-def downloadLog(year, month, day, output):
-    """Downloads a DGG logs to logs/<year>-<month>-<day> for a given year, month, and day"""
-    filename = output + str(year) + '-' + str(month) + '-' + str(day) + '.txt'
-    if (not os.path.isfile(filename)):
-        print("Retrieving logs for " + calendar.month_name[month] + ' ' + str(day) + ', ' + str(year))
-        URL = getLogURL(year, month, day)
-        r = requests.get(URL)
-
-        if (r.status_code == 200):
-            f = open(filename, 'x', encoding='utf-8')
-            f.write(r.text)
-            f.close()
-        else:
-            print('Failed to get URL: ' + URL)
-
 def getLog(year, month, day):
+    """
+    Sends an HTML request for the DGG chatlog for a given year, month, and day.
+    """
     print("Retrieving logs for " + calendar.month_name[month] + ' ' + str(day) + ', ' + str(year))
     URL = getLogURL(year, month, day)
     r = requests.get(URL)
@@ -63,21 +58,10 @@ def getLog(year, month, day):
         print('Failed to get URL: ' + URL)
         return ''
 
-def createLogsDirectory(start_date, output):
-    """Creates logs directory if not already there and downloads all DGG logs from start_date to today"""
-    current_date = start_date
-    today = datetime.date.today()
-    day = datetime.timedelta(days=1)
-
-    if (not os.path.isdir('logs')):
-        os.mkdir('logs')
-
-    while (current_date <= today):
-        downloadLog(current_date.year, current_date.month, current_date.day, output)
-        current_date += day
-
 def getUsername(line):
-    """Given a valid DGG chat line returns the username of the message"""
+    """
+    Given a valid DGG chat line returns the username of the message.
+    """
     i = TIMESTAMP_LEN
     while (line[i] != ':'):
         i += 1
@@ -85,7 +69,9 @@ def getUsername(line):
     return line[:i][TIMESTAMP_LEN:]
 
 def getMessage(line):
-    """Given a valid DGG chat line returns the content of the message"""
+    """
+    Given a valid DGG chat line returns the content of the message.
+    """
     i = TIMESTAMP_LEN
     while (line[i] != ':'):
         i += 1
@@ -94,6 +80,11 @@ def getMessage(line):
     return line[i + 2:]
 
 def findOccurances(start_date, patterns):
+    """
+    Creates a dictionary for each pattern that relates a username to the
+    number of occurances of that pattern since start_date and then saves
+    that dictionary as 'dictionary.bin'
+    """
     current_date = start_date
     today = datetime.date.today()
     day = datetime.timedelta(days=1)
@@ -135,14 +126,6 @@ def findOccurances(start_date, patterns):
     with open('dictionary.bin', 'wb') as f:
         pickle.dump(emote_dict, f)
 
-'''
-createLogsDirectory(datetime.date(2021, 1, 1), 'logs/')
-print(getUsername('[2021-06-26 22:11:21 UTC] FunkPhysics: SOY Clap'))
-print(getMessage('[2021-06-26 22:11:21 UTC] FunkPhysics: SOY Clap'))
-
-for emote in emotes.emoteFileNameTest:
-    print(emote + ': ' + str(findOccurances(datetime.date(2021, 1, 5), emote)))
-'''
-findOccurances(datetime.date(2021, 6, 1), emotes.emoteFileNameTest.keys())
+findOccurances(datetime.date(2021, 6, 1), emotes.emoteFileName.keys())
 abathur = pickle.load(open('dictionary.bin', 'rb'))
 print(abathur['Abathur']['TheChadLinker'])
