@@ -216,3 +216,6 @@ emoteFileName = {
     'Yoda1': '5f355485bebee.png',
     'ZOOMER': '5c2bbe3c34dab.png',
 }
+
+def getEmoteURL(emote):
+    return baseURL + emoteFileName[emote]

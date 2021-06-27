@@ -3,6 +3,7 @@ import calendar
 import os
 import requests
 import re
+import pickle
 import emotes
 
 # Add one for space
@@ -23,7 +24,33 @@ def getLogURL(year, month, day):
     URL += '.txt'
     return URL
 
-def createLogsDirectory(start_date):
+def downloadLog(year, month, day, output):
+    """Downloads a DGG logs to logs/<year>-<month>-<day> for a given year, month, and day"""
+    filename = output + str(year) + '-' + str(month) + '-' + str(day) + '.txt'
+    if (not os.path.isfile(filename)):
+        print("Retrieving logs for " + calendar.month_name[month] + ' ' + str(day) + ', ' + str(year))
+        URL = getLogURL(year, month, day)
+        r = requests.get(URL)
+
+        if (r.status_code == 200):
+            f = open(filename, 'x', encoding='utf-8')
+            f.write(r.text)
+            f.close()
+        else:
+            print('Failed to get URL: ' + URL)
+
+def getLog(year, month, day):
+    print("Retrieving logs for " + calendar.month_name[month] + ' ' + str(day) + ', ' + str(year))
+    URL = getLogURL(year, month, day)
+    r = requests.get(URL)
+
+    if (r.status_code == 200):
+        return r.text
+    else:
+        print('Failed to get URL: ' + URL)
+        return ''
+
+def createLogsDirectory(start_date, output):
     """Creates logs directory if not already there and downloads all DGG logs from start_date to today"""
     current_date = start_date
     today = datetime.date.today()
@@ -33,32 +60,32 @@ def createLogsDirectory(start_date):
         os.mkdir('logs')
 
     while (current_date <= today):
-        filename = 'logs/' + str(current_date.year) + '-' + str(current_date.month) + '-' + str(current_date.day) + '.txt'
-        if (not os.path.isfile(filename)):
-            print("Retrieving logs for " + calendar.month_name[current_date.month] + ' ' + str(current_date.day) + ', ' + str(current_date.year))
-            URL = getLogURL(current_date.year, current_date.month, current_date.day)
-            r = requests.get(URL)
-
-            if (r.status_code == 200):
-                f = open(filename, 'x', encoding='utf-8')
-                f.write(r.text)
-                f.close()
-            else:
-                print('Failed to get URL: ' + URL)
-
+        downloadLog(current_date.year, current_date.month, current_date.day, output)
         current_date += day
 
 def getUsername(line):
     """Given a DGG chat line returns the username of the message"""
+    if (line == '' or line[0] != '['):
+        return ''
+
     i = TIMESTAMP_LEN
+
+    if (i >= len(line)):
+        print(line)
 
     while (line[i] != ':'):
         i += 1
+
+        if (i >= len(line)):
+            print(line)
 
     return line[:i][TIMESTAMP_LEN:]
 
 def getMessage(line):
     """Given a DGG chat line returns the content of the message"""
+    if (line == '' or line[0] != '['):
+        return ''
+
     i = TIMESTAMP_LEN
 
     while (line[i] != ':'):
@@ -67,28 +94,49 @@ def getMessage(line):
     # add 2 to not include colon and space
     return line[i + 2:]
 
-def findOccurances(start_date, match):
+def findOccurances(start_date, patterns):
     current_date = start_date
     today = datetime.date.today()
     day = datetime.timedelta(days=1)
 
-    total_matches = 0
+    emote_dict = {}
     while (current_date <= today):
-        filename = 'logs/' + str(current_date.year) + '-' + str(current_date.month) + '-' + str(current_date.day) + '.txt'
-        if (os.path.isfile(filename)):
-            f = open(filename, 'r', encoding='utf-8')
-            lines = f.readlines()
+        log = getLog(current_date.year, current_date.month, current_date.day)
+        lines = log.splitlines()
 
-            for line in lines:
-                matches = re.findall(match, line)
-                total_matches += len(matches)
+        for line in lines:
+            username = getUsername(line)
+            message = getMessage(line)
+
+            for pattern in patterns:
+                matches = re.findall(pattern, message)
+
+                if pattern in emote_dict:
+                    if username in emote_dict[pattern]:
+                        emote_dict[pattern][username] += len(matches)
+                    else:
+                        emote_dict[pattern][username] = len(matches)
+                else:
+                    emote_dict[pattern] = {}
+                    emote_dict[pattern][username] = len(matches)
 
         current_date += day
-    return(total_matches)
 
-createLogsDirectory(datetime.date(2021, 1, 1))
+    if (not os.path.isfile('dictionary.bin')):
+        f = open('dictionary.bin', 'x')
+        f.close()
+
+    with open('dictionary.bin', 'wb') as f:
+        pickle.dump(emote_dict, f)
+
+'''
+createLogsDirectory(datetime.date(2021, 1, 1), 'logs/')
 print(getUsername('[2021-06-26 22:11:21 UTC] FunkPhysics: SOY Clap'))
 print(getMessage('[2021-06-26 22:11:21 UTC] FunkPhysics: SOY Clap'))
 
 for emote in emotes.emoteFileNameTest:
-    print(emote + ': ' + str(findOccurances(datetime.date(2021, 1, 1), emote)))
+    print(emote + ': ' + str(findOccurances(datetime.date(2021, 1, 5), emote)))
+'''
+#findOccurances(datetime.date(2021, 6, 20), emotes.emoteFileNameTest.keys())
+abathur = pickle.load(open('dictionary.bin', 'rb'))
+print(abathur['Abathur']['TheChadLinker'])
