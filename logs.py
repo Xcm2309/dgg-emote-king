@@ -10,15 +10,17 @@ import emotes
 TIMESTAMP_LEN = len('[2309-04-27 04:20:69 UTC]') + 1
 
 def isValidDGGLine(line):
-    strlen = len(line)
-    if strlen <= TIMESTAMP_LEN:
+    """Checks a DGG chatline for """
+    validRE = '^\[[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC\] \w+:'
+    if re.match(validRE, line):
+        return True
+    else:
         return False
 
-    i = TIMESTAMP_LEN
-    while (i < strlen and line[i] != ':'):
-        i += 1
-
-    return i < strlen
+def isValidDGGLog(log):
+    lines = log.splitlines()
+    # If the last line isn't valid something probably went wrong
+    return isValidDGGLine(lines[len(lines) - 1])
 
 def getLogURL(year, month, day):
     """Return the URL of a DGG chatlog for a given year, month, and day"""
@@ -99,6 +101,10 @@ def findOccurances(start_date, patterns):
     emote_dict = {}
     while (current_date <= today):
         log = getLog(current_date.year, current_date.month, current_date.day)
+        while (not isValidDGGLog(log)):
+            print("Invalid Log, Retrying...")
+            log = getLog(current_date.year, current_date.month, current_date.day)
+
         lines = log.splitlines()
 
         for line in lines:
