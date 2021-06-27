@@ -9,6 +9,17 @@ import emotes
 # Add one for space
 TIMESTAMP_LEN = len('[2309-04-27 04:20:69 UTC]') + 1
 
+def isValidDGGLine(line):
+    strlen = len(line)
+    if strlen <= TIMESTAMP_LEN:
+        return False
+
+    i = TIMESTAMP_LEN
+    while (i < strlen and line[i] != ':'):
+        i += 1
+
+    return i < strlen
+
 def getLogURL(year, month, day):
     """Return the URL of a DGG chatlog for a given year, month, and day"""
     URL = 'https://overrustlelogs.net/Destinygg%20chatlog/'
@@ -64,30 +75,16 @@ def createLogsDirectory(start_date, output):
         current_date += day
 
 def getUsername(line):
-    """Given a DGG chat line returns the username of the message"""
-    if (line == '' or line[0] != '['):
-        return ''
-
+    """Given a valid DGG chat line returns the username of the message"""
     i = TIMESTAMP_LEN
-
-    if (i >= len(line)):
-        print(line)
-
     while (line[i] != ':'):
         i += 1
-
-        if (i >= len(line)):
-            print(line)
 
     return line[:i][TIMESTAMP_LEN:]
 
 def getMessage(line):
-    """Given a DGG chat line returns the content of the message"""
-    if (line == '' or line[0] != '['):
-        return ''
-
+    """Given a valid DGG chat line returns the content of the message"""
     i = TIMESTAMP_LEN
-
     while (line[i] != ':'):
         i += 1
 
@@ -105,20 +102,23 @@ def findOccurances(start_date, patterns):
         lines = log.splitlines()
 
         for line in lines:
-            username = getUsername(line)
-            message = getMessage(line)
+            if (isValidDGGLine(line)):
+                username = getUsername(line)
+                message = getMessage(line)
 
-            for pattern in patterns:
-                matches = re.findall(pattern, message)
+                for pattern in patterns:
+                    matches = re.findall(pattern, message)
 
-                if pattern in emote_dict:
-                    if username in emote_dict[pattern]:
-                        emote_dict[pattern][username] += len(matches)
+                    if pattern in emote_dict:
+                        if username in emote_dict[pattern]:
+                            emote_dict[pattern][username] += len(matches)
+                        else:
+                            emote_dict[pattern][username] = len(matches)
                     else:
+                        emote_dict[pattern] = {}
                         emote_dict[pattern][username] = len(matches)
-                else:
-                    emote_dict[pattern] = {}
-                    emote_dict[pattern][username] = len(matches)
+            else:
+                print('Invalid line: ' + line)
 
         current_date += day
 
@@ -137,6 +137,6 @@ print(getMessage('[2021-06-26 22:11:21 UTC] FunkPhysics: SOY Clap'))
 for emote in emotes.emoteFileNameTest:
     print(emote + ': ' + str(findOccurances(datetime.date(2021, 1, 5), emote)))
 '''
-#findOccurances(datetime.date(2021, 6, 20), emotes.emoteFileNameTest.keys())
+findOccurances(datetime.date(2021, 6, 1), emotes.emoteFileNameTest.keys())
 abathur = pickle.load(open('dictionary.bin', 'rb'))
 print(abathur['Abathur']['TheChadLinker'])
