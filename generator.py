@@ -35,7 +35,7 @@ def generate_page(emote, emote_dict, template, output):
         f.close()
 
     #https://stackoverflow.com/questions/7197315/5-maximum-values-in-a-python-dictionary
-    rankings = sorted(emote_dict, key=emote_dict.get, reverse=True)[:10]
+    rankings = sorted(emote_dict, key=emote_dict.get, reverse=True)[:NUMBER_OF_RANKINGS]
     with open(filename, 'w', encoding='utf-8') as f:
         with open(template, 'r', encoding='utf-8') as t:
             tlines = t.readlines()
@@ -48,4 +48,4 @@ def generate_page(emote, emote_dict, template, output):
 
 
 dictionary = load_dictionary('dictionary.bin')
-generate_page('Abathur', dictionary['Abathur'], 'template.html', '')
+generate_page('Abathur', dictionary['Abathur'], 'template.html', 'generated/')
